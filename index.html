@@ -360,7 +360,7 @@
         function getNonMatchingColor(row, col) {
             let color;
             do {
-                color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                fruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
             } while (wouldMatch(row, col, color));
             return color;
         }
@@ -399,6 +399,7 @@
         }
 
         function handleCellClick(row, col) {
+            console.log('Cell clicked:', row, col);
             if (!isPlaying || isPaused || isProcessing) return;
 
             const cells = document.querySelectorAll('.cell');
@@ -558,7 +559,7 @@
             for (let col = 0; col < BOARD_SIZE; col++) {
                 for (let row = 0; row < BOARD_SIZE; row++) {
                     if (board[row][col] === null) {
-                        board[row][col] = COLORS[Math.floor(Math.random() * COLORS.length)];
+                        board[row][col] = FRUITS[Math.floor(Math.random() * FRUITS.length)];
                     }
                 }
             }
@@ -648,9 +649,11 @@
         }
 
         // Initialize
-        initBoard();
-        renderBoard();
-        document.getElementById('startModal').style.display = 'flex';
+        window.onload = function() {
+            initBoard();
+            renderBoard();
+            document.getElementById('startModal').style.display = 'flex';
+        };
     </script>
 </body>
 </html>
