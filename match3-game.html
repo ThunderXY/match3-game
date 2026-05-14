@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 消消乐大冒险 ✨</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 95%;
+        }
+
+        h1 {
+            color: #ff6b6b;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0 #ffd93d;
+        }
+
+        .subtitle {
+            color: #6c5ce7;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            padding: 15px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .stat-value {
+            color: #6c5ce7;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            margin: 0 auto 20px;
+            background: #ffd93d;
+            padding: 10px;
+            border-radius: 15px;
+            width: fit-content;
+        }
+
+        .cell {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+        }
+
+        .cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell.selected {
+            animation: pulse 0.5s infinite;
+            box-shadow: 0 0 20px #ff6b6b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .cell.matched {
+            animation: pop 0.3s forwards;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal h2 {
+            color: #ff6b6b;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .modal p {
+            font-size: 1.2em;
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .combo-text {
+            position: fixed;
+            font-size: 2em;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 0 #ffd93d;
+            animation: comboAnim 1s forwards;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        @keyframes comboAnim {
+            0% { transform: scale(0.5); opacity: 1; }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        .particles {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        .particle {
+            position: absolute;
+            font-size: 20px;
+            animation: particleAnim 1s forwards;
+        }
+
+        @keyframes particleAnim {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>✨ 消消乐大冒险 ✨</h1>
+        <p class="subtitle">交换相邻方块，消除三个相同！</p>
+
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-label">分数</span>
+                <span class="stat-value" id="score">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">连击</span>
+                <span class="stat-value" id="combo">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">步数</span>
+                <span class="stat-value" id="moves">20</span>
+            </div>
+        </div>
+
+        <div class="game-board" id="board"></div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="startGame()">开始游戏</button>
+            <button class="btn btn-secondary" onclick="pauseGame()">暂停</button>
+        </div>
+    </div>
+
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content">
+            <h2>🎉 游戏结束！</h2>
+            <p>最终得分：<span id="finalScore">0</span></p>
+            <p>最大连击：<span id="maxCombo">0</span></p>
+            <p>剩余步数：<span id="remainingMoves">0</span></p>
+            <button class="btn btn-primary" onclick="startGame()">再玩一次</button>
+        </div>
+    </div>
+
+    <div class="modal" id="pauseModal">
+        <div class="modal-content">
+            <h2>⏸️ 游戏暂停</h2>
+            <button class="btn btn-primary" onclick="resumeGame()">继续游戏</button>
+            <button class="btn btn-secondary" onclick="restartGame()">重新开始</button>
+        </div>
+    </div>
+
+    <div class="modal" id="startModal">
+        <div class="modal-content">
+            <h2>🎮 消消乐大冒险</h2>
+            <p>交换相邻方块，消除三个相同获得分数！</p>
+            <p>🟡 10分 | 🔴 20分 | 🔵 30分 | 🟢 40分 | 🟣 50分 | 🟠 60分</p>
+            <button class="btn btn-primary" onclick="startGame()">开始游戏</button>
+        </div>
+    </div>
+
+    <script>
+        const BOARD_SIZE = 8;
+        const COLORS = ['🟡', '🔴', '🔵', '🟢', '🟣', '🟠'];
+        const SCORES = { '🟡': 10, '🔴': 20, '🔵': 30, '🟢': 40, '🟣': 50, '🟠': 60 };
+        const MOVES = 20;
+
+        let board = [];
+        let selectedCell = null;
+        let score = 0;
+        let combo = 0;
+        let moves = MOVES;
+        let isPlaying = false;
+        let isPaused = false;
+        let maxCombo = 0;
+        let isProcessing = false;
+
+        function initBoard() {
+            board = [];
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                board[i] = [];
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    board[i][j] = getNonMatchingColor(i, j);
+                }
+            }
+        }
+
+        function getNonMatchingColor(row, col) {
+            let color;
+            do {
+                color = COLORS[Math.floor(Math.random() * COLORS.length)];
+            } while (wouldMatch(row, col, color));
+            return color;
+        }
+
+        function wouldMatch(row, col, color) {
+            // Check horizontal
+            if (col >= 2 &&
+                board[row][col-1] === color &&
+                board[row][col-2] === color) {
+                return true;
+            }
+            // Check vertical
+            if (row >= 2 &&
+                board[row-1][col] === color &&
+                board[row-2][col] === color) {
+                return true;
+            }
+            return false;
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.textContent = board[i][j];
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.onclick = () => handleCellClick(i, j);
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function handleCellClick(row, col) {
+            if (!isPlaying || isPaused || isProcessing) return;
+
+            const cells = document.querySelectorAll('.cell');
+
+            if (selectedCell === null) {
+                selectedCell = { row, col };
+                cells[row * BOARD_SIZE + col].classList.add('selected');
+            } else {
+                const cells = document.querySelectorAll('.cell');
+                cells[selectedCell.row * BOARD_SIZE + selectedCell.col].classList.remove('selected');
+
+                if (isAdjacent(selectedCell, { row, col })) {
+                    trySwap(selectedCell, { row, col });
+                } else {
+                    selectedCell = { row, col };
+                    cells[row * BOARD_SIZE + col].classList.add('selected');
+                    return;
+                }
+
+                selectedCell = null;
+            }
+        }
+
+        function isAdjacent(pos1, pos2) {
+            const rowDiff = Math.abs(pos1.row - pos2.row);
+            const colDiff = Math.abs(pos1.col - pos2.col);
+            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+        }
+
+        async function trySwap(pos1, pos2) {
+            isProcessing = true;
+
+            // Swap
+            [board[pos1.row][pos1.col], board[pos2.row][pos2.col]] =
+            [board[pos2.row][pos2.col], board[pos1.row][pos1.col]];
+            renderBoard();
+
+            // Check matches
+            const matches = findMatches();
+
+            if (matches.length > 0) {
+                moves--;
+                updateStats();
+                combo = 0;
+                await processMatches();
+            } else {
+                // Swap back
+                await new Promise(resolve => setTimeout(resolve, 200));
+                [board[pos1.row][pos1.col], board[pos2.row][pos2.col]] =
+                [board[pos2.row][pos2.col], board[pos1.row][pos1.col]];
+                renderBoard();
+            }
+
+            isProcessing = false;
+
+            if (moves <= 0) {
+                endGame();
+            }
+        }
+
+        function findMatches() {
+            const matches = new Set();
+
+            // Check horizontal
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE - 2; j++) {
+                    if (board[i][j] && board[i][j] === board[i][j+1] && board[i][j] === board[i][j+2]) {
+                        matches.add(`${i},${j}`);
+                        matches.add(`${i},${j+1}`);
+                        matches.add(`${i},${j+2}`);
+                    }
+                }
+            }
+
+            // Check vertical
+            for (let i = 0; i < BOARD_SIZE - 2; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    if (board[i][j] && board[i][j] === board[i+1][j] && board[i][j] === board[i+2][j]) {
+                        matches.add(`${i},${j}`);
+                        matches.add(`${i+1},${j}`);
+                        matches.add(`${i+2},${j}`);
+                    }
+                }
+            }
+
+            return Array.from(matches).map(m => {
+                const [row, col] = m.split(',').map(Number);
+                return { row, col };
+            });
+        }
+
+        async function processMatches() {
+            let matches = findMatches();
+
+            while (matches.length > 0) {
+                combo++;
+                if (combo > maxCombo) maxCombo = combo;
+
+                // Show combo text
+                if (combo > 1) {
+                    showComboText(combo);
+                }
+
+                // Calculate score
+                const matchScore = matches.reduce((sum, m) => {
+                    return sum + SCORES[board[m.row][m.col]];
+                }, 0) * combo;
+
+                score += matchScore;
+                updateStats();
+
+                // Animate matched cells
+                const cells = document.querySelectorAll('.cell');
+                matches.forEach(m => {
+                    cells[m.row * BOARD_SIZE + m.col].classList.add('matched');
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // Remove matches
+                matches.forEach(m => {
+                    board[m.row][m.col] = null;
+                });
+
+                // Drop cells
+                await dropCells();
+
+                // Fill empty cells
+                await fillEmptyCells();
+
+                renderBoard();
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // Check for new matches
+                matches = findMatches();
+            }
+        }
+
+        async function dropCells() {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                let emptyRow = BOARD_SIZE - 1;
+
+                for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+                    if (board[row][col] !== null) {
+                        if (row !== emptyRow) {
+                            board[emptyRow][col] = board[row][col];
+                            board[row][col] = null;
+                        }
+                        emptyRow--;
+                    }
+                }
+            }
+        }
+
+        async function fillEmptyCells() {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                for (let row = 0; row < BOARD_SIZE; row++) {
+                    if (board[row][col] === null) {
+                        board[row][col] = COLORS[Math.floor(Math.random() * COLORS.length)];
+                    }
+                }
+            }
+        }
+
+        function showComboText(combo) {
+            const comboText = document.createElement('div');
+            comboText.className = 'combo-text';
+            comboText.textContent = `${combo}x 连击！`;
+            comboText.style.left = '50%';
+            comboText.style.top = '50%';
+            comboText.style.transform = 'translate(-50%, -50%)';
+            document.body.appendChild(comboText);
+
+            setTimeout(() => comboText.remove(), 1000);
+        }
+
+        function createParticles(row, col) {
+            const boardEl = document.getElementById('board');
+            const rect = boardEl.getBoundingClientRect();
+            const cellWidth = rect.width / BOARD_SIZE;
+            const cellHeight = rect.height / BOARD_SIZE;
+
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = '✨';
+                particle.style.left = `${rect.left + col * cellWidth + cellWidth / 2}px`;
+                particle.style.top = `${rect.top + row * cellHeight + cellHeight / 2}px`;
+                particle.style.setProperty('--tx', `${(Math.random() - 0.5) * 100}px`);
+                particle.style.setProperty('--ty', `${(Math.random() - 0.5) * 100}px`);
+                document.body.appendChild(particle);
+
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('combo').textContent = combo;
+            document.getElementById('moves').textContent = moves;
+        }
+
+        function startGame() {
+            document.getElementById('startModal').style.display = 'none';
+            document.getElementById('gameOverModal').style.display = 'none';
+            document.getElementById('pauseModal').style.display = 'none';
+
+            score = 0;
+            combo = 0;
+            moves = MOVES;
+            maxCombo = 0;
+            isPlaying = true;
+            isPaused = false;
+            isProcessing = false;
+
+            initBoard();
+            renderBoard();
+            updateStats();
+        }
+
+        function pauseGame() {
+            if (!isPlaying || isPaused) return;
+            isPaused = true;
+            document.getElementById('pauseModal').style.display = 'flex';
+        }
+
+        function resumeGame() {
+            isPaused = false;
+            document.getElementById('pauseModal').style.display = 'none';
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function endGame() {
+            isPlaying = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('maxCombo').textContent = maxCombo;
+            document.getElementById('remainingMoves').textContent = moves;
+            document.getElementById('gameOverModal').style.display = 'flex';
+        }
+
+        // Initialize
+        initBoard();
+        renderBoard();
+        document.getElementById('startModal').style.display = 'flex';
+    </script>
+</body>
+</html>
