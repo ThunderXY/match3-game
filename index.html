@@ -358,11 +358,11 @@
         }
 
         function getNonMatchingColor(row, col) {
-            let color;
+            let fruit;
             do {
                 fruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
-            } while (wouldMatch(row, col, color));
-            return color;
+            } while (wouldMatch(row, col, fruit));
+            return fruit;
         }
 
         function wouldMatch(row, col, color) {
